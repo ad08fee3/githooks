@@ -56,7 +56,7 @@ if [ ! -d "$TEST_PREFIX_DIR/.githooks" ]; then
     exit 2
 fi
 
-if [ "$(git config --global --get githooks.installDir)" != "$TEST_PREFIX_DIR/.githooks" ]; then
+if [ "$(expand_home_refs "$(git config --global --get githooks.installDir)")" != "$TEST_PREFIX_DIR/.githooks" ]; then
     echo "! Install directory in config \`$(git config --global --get githooks.installDir)\` is incorrect!"
     exit 3
 fi

@@ -2659,7 +2659,7 @@ config_search_dir() {
     elif [ "$1" = "reset" ]; then
         git config --global --unset githooks.previousSearchDir
     elif [ "$1" = "print" ]; then
-        CONFIG_SEARCH_DIR=$(git config --global --get githooks.previousSearchDir)
+        CONFIG_SEARCH_DIR=$(expand_home_refs "$(git config --global --get githooks.previousSearchDir)")
         if [ -z "$CONFIG_SEARCH_DIR" ]; then
             echo "No previous search directory is set"
         else

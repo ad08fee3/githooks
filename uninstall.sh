@@ -188,7 +188,7 @@ uninstall_from_existing_repositories() {
     read -r DO_UNINSTALL
     if [ "$DO_UNINSTALL" != "y" ] && [ "$DO_UNINSTALL" != "Y" ]; then return 0; fi
 
-    PRE_START_DIR=$(git config --global --get githooks.previousSearchDir)
+    PRE_START_DIR=$(expand_home_refs "$(git config --global --get githooks.previousSearchDir)")
     # shellcheck disable=SC2181
     if [ $? -eq 0 ] && [ -n "$PRE_START_DIR" ]; then
         START_DIR="$PRE_START_DIR"
