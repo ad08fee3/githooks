@@ -5,7 +5,7 @@
 # its hooks to execute on various Git triggers.
 
 # Read the runner script from the local/global or system config
-GITHOOKS_RUNNER=$(git config githooks.runner)
+GITHOOKS_RUNNER=$(git config --get githooks.runner)
 
 if [ ! -x "$GITHOOKS_RUNNER" ]; then
     echo "! Githooks runner points to a non existing location" >&2
