@@ -19,7 +19,7 @@ fi
 
 mkdir -p ~/.githooks/templates/hooks
 git config --global init.templateDir ~/.githooks/templates
-templateDir=$(git config --global init.templateDir)
+templateDir=$(git config --global --get init.templateDir)
 
 # run the install, and select installing hooks into existing repos
 echo 'n

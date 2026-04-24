@@ -119,6 +119,50 @@ execute_installation() {
     return 0
 }
 
+
+#####################################################
+# Expands user home directory references in a path string.
+#
+# Expands:
+#   - Leading "~" into the user's $HOME directory
+#   - All literal "$HOME" strings into the resolved $HOME
+#
+# Does NOT:
+#   - Resolve "." or ".."
+#   - Resolve symbolic links
+#   - Verify path existence
+#   - Perform any filesystem normalization
+#
+# Invocation example:
+# INSTALL_DIR=$(expand_home_refs "$(git config --global --get githooks.installDir)")
+#
+# Parameters:
+#   $1 - Raw input path string to expand
+#
+# Output:
+#   Prints the expanded path to stdout
+#
+# Returns:
+#   0 always (string transformation only)
+#####################################################
+expand_home_refs() {
+    local p="$1"
+
+    # empty input → return empty
+    [ -z "$p" ] && return 0
+
+    # expand any leading ~
+    case "$p" in
+        "~")   p="$HOME" ;;
+        "~"/*) p="$HOME${p#?}" ;;
+    esac
+
+    # expand literal "$HOME"
+    p=$(printf '%s' "$p" | sed "s|\$HOME|$HOME|g")
+
+    printf '%s\n' "$p"
+}
+
 ############################################################
 # Checks if any deprecated features are used
 #
@@ -149,17 +193,17 @@ legacy_transform_before_update() {
 
     # Variable transformations in global git config
     # Can be applied to all versions without any problem
-    OLD_CONFIG_VALUE=$(git config --global githooks.autoupdate.updateCloneUrl)
+    OLD_CONFIG_VALUE=$(git config --global --get githooks.autoupdate.updateCloneUrl)
     if [ -n "$OLD_CONFIG_VALUE" ]; then
         git config --global githooks.cloneUrl "$OLD_CONFIG_VALUE" || LEGACY_TRANSFORM_FAILURES="true"
     fi
 
-    OLD_CONFIG_VALUE=$(git config --global githooks.autoupdate.updateCloneBranch)
+    OLD_CONFIG_VALUE=$(git config --global --get githooks.autoupdate.updateCloneBranch)
     if [ -n "$OLD_CONFIG_VALUE" ]; then
         git config --global githooks.cloneBranch "$OLD_CONFIG_VALUE" || LEGACY_TRANSFORM_FAILURES="true"
     fi
 
-    OLD_CONFIG_VALUE=$(git config --global githooks.previous.searchdir)
+    OLD_CONFIG_VALUE=$(git config --global --get githooks.previous.searchdir)
     if [ -n "$OLD_CONFIG_VALUE" ]; then
         git config --global githooks.previousSearchDir "$OLD_CONFIG_VALUE" || LEGACY_TRANSFORM_FAILURES="true"
     fi
@@ -326,7 +370,7 @@ legacy_transform_registered_repos() {
         PR_125="true"
     fi
 
-    if [ "$(git config --global githooks.useCoreHooksPath)" = "true" ]; then
+    if [ "$(git config --global --get githooks.useCoreHooksPath)" = "true" ]; then
         if [ "$PR_125" = "true" ]; then
             echo >&2
             echo "! DEPRECATION WARNING: Local paths for shared hook repositories" >&2
@@ -526,7 +570,7 @@ load_install_dir() {
     # an install directory set (from --prefix)
     if [ -z "$INSTALL_DIR" ]; then
         # load from config
-        INSTALL_DIR=$(git config --global githooks.installDir)
+        INSTALL_DIR=$(expand_home_refs "$(git config --global --get githooks.installDir)")
 
         if [ -z "$INSTALL_DIR" ]; then
             # if still empty, then set to default
@@ -714,7 +758,7 @@ is_non_interactive() {
 should_skip_install_into_existing_repositories() {
     [ "$SKIP_INSTALL_INTO_EXISTING" = "true" ] ||
         use_core_hookspath ||
-        [ "$(git config --global githooks.useCoreHooksPath)" = "true" ] || return 1
+        [ "$(git config --global --get githooks.useCoreHooksPath)" = "true" ] || return 1
 }
 
 ############################################################
@@ -738,8 +782,8 @@ is_single_repo_install() {
 ############################################################
 install_only_server_hooks() {
     [ "$INSTALL_ONLY_SERVER_HOOKS" = "true" ] ||
-        [ "$(git config --global githooks.maintainOnlyServerHooks)" = "true" ] ||
-        [ "$(git config --global githooks.maintainOnlyServerHooks)" = "Y" ] || # Legacy
+        [ "$(git config --global --get githooks.maintainOnlyServerHooks)" = "true" ] ||
+        [ "$(git config --global --get githooks.maintainOnlyServerHooks)" = "Y" ] || # Legacy
         return 1
 }
 
@@ -882,16 +926,16 @@ prepare_target_template_directory() {
 ############################################################
 find_git_hook_templates() {
 
-    INSTALL_USES_CORE_HOOKS_PATH=$(git config --global githooks.useCoreHooksPath)
+    INSTALL_USES_CORE_HOOKS_PATH=$(git config --global --get githooks.useCoreHooksPath)
 
     # 1. from environment variables
     mark_directory_as_target "$GIT_TEMPLATE_DIR" "hooks" && return 0
 
     # 2. from git config
     if use_core_hookspath || [ "$INSTALL_USES_CORE_HOOKS_PATH" = "true" ]; then
-        mark_directory_as_target "$(git config --global core.hooksPath)" && return 0
+        mark_directory_as_target "$(git config --global --get core.hooksPath)" && return 0
     elif ! use_core_hookspath || [ "$INSTALL_USES_CORE_HOOKS_PATH" = "false" ]; then
-        mark_directory_as_target "$(git config --global init.templateDir)" "hooks" && return 0
+        mark_directory_as_target "$(git config --global --get init.templateDir)" "hooks" && return 0
     fi
 
     # 3. from the default location
@@ -1349,7 +1393,7 @@ disable_lfs_hook_if_detected() {
 
         # Load the global decision
         if [ -z "$DELETE_DETECTED_LFS_HOOKS" ]; then
-            DELETE_DETECTED_LFS_HOOKS=$(git config --global githooks.deleteDetectedLFSHooks)
+            DELETE_DETECTED_LFS_HOOKS=$(git config --global --get githooks.deleteDetectedLFSHooks)
         fi
 
         if ! is_non_interactive && [ -z "$DELETE_DETECTED_LFS_HOOKS" ]; then
@@ -1544,7 +1588,7 @@ install_hooks_into_repo() {
         if [ -d "$TARGET_ROOT" ] && is_git_repo "$TARGET_ROOT" &&
             [ ! -f "$TARGET_ROOT/.githooks/README.md" ]; then
 
-            NEVER_SETUP_README=$(git config --global githooks.noReadme)
+            NEVER_SETUP_README=$(git config --global --get githooks.noReadme)
 
             if [ "$NEVER_SETUP_README" = "yes" ] || [ "$SETUP_INCLUDED_README" = "s" ] || [ "$SETUP_INCLUDED_README" = "S" ]; then
                 true # OK, we already said we want to skip all
@@ -1737,7 +1781,7 @@ set_githooks_directory() {
         git config --global githooks.pathForUseCoreHooksPath "$2"
         git config --global core.hooksPath "$2"
 
-        CURRENT_TEMPLATE_DIR=$(git config --global init.templateDir)
+        CURRENT_TEMPLATE_DIR=$(git config --global --get init.templateDir)
 
         # shellcheck disable=SC2012
         if [ -d "$CURRENT_TEMPLATE_DIR" ] &&
@@ -1768,7 +1812,7 @@ set_githooks_directory() {
         git config --global githooks.useCoreHooksPath false
         git config --global init.templateDir "$2"
 
-        CURRENT_CORE_HOOKS_PATH=$(git config --global core.hooksPath)
+        CURRENT_CORE_HOOKS_PATH=$(git config --global --get core.hooksPath)
         if [ -n "$CURRENT_CORE_HOOKS_PATH" ]; then
             echo "! The \`core.hooksPath\` setting is currently set to" >&2
             echo "  \`$CURRENT_CORE_HOOKS_PATH\`" >&2
@@ -1831,10 +1875,10 @@ update_release_clone() {
 
     # If not set by the user, check the config for url and branch
     if [ -z "$GITHOOKS_CLONE_URL" ]; then
-        GITHOOKS_CLONE_URL=$(git config --global githooks.cloneUrl)
+        GITHOOKS_CLONE_URL=$(git config --global --get githooks.cloneUrl)
     fi
     if [ -z "$GITHOOKS_CLONE_BRANCH" ]; then
-        GITHOOKS_CLONE_BRANCH=$(git config --global githooks.cloneBranch)
+        GITHOOKS_CLONE_BRANCH=$(git config --global --get githooks.cloneBranch)
     fi
 
     if is_git_repo "$GITHOOKS_CLONE_DIR"; then

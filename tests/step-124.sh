@@ -2,6 +2,50 @@
 # Test:
 #   Cli tool: test listing hooks from local shared repos
 
+
+#####################################################
+# Expands user home directory references in a path string.
+#
+# Expands:
+#   - Leading "~" into the user's $HOME directory
+#   - All literal "$HOME" strings into the resolved $HOME
+#
+# Does NOT:
+#   - Resolve "." or ".."
+#   - Resolve symbolic links
+#   - Verify path existence
+#   - Perform any filesystem normalization
+#
+# Invocation example:
+# INSTALL_DIR=$(expand_home_refs "$(git config --global --get githooks.installDir)")
+#
+# Parameters:
+#   $1 - Raw input path string to expand
+#
+# Output:
+#   Prints the expanded path to stdout
+#
+# Returns:
+#   0 always (string transformation only)
+#####################################################
+expand_home_refs() {
+    local p="$1"
+
+    # empty input → return empty
+    [ -z "$p" ] && return 0
+
+    # expand any leading ~
+    case "$p" in
+        "~")   p="$HOME" ;;
+        "~"/*) p="$HOME${p#?}" ;;
+    esac
+
+    # expand literal "$HOME"
+    p=$(printf '%s' "$p" | sed "s|\$HOME|$HOME|g")
+
+    printf '%s\n' "$p"
+}
+
 if ! sh /var/lib/githooks/install.sh; then
     echo "! Failed to execute the install script"
     exit 1
@@ -14,7 +58,7 @@ mkdir -p /tmp/test117/shared/.githooks/pre-commit &&
 
 # generate the shared folder name (from the cli.sh)
 REPO_LOCATION="ssh://git@github.com/test/repo1.git"
-INSTALL_DIR=$(git config --global --get githooks.installDir)
+INSTALL_DIR=$(expand_home_refs "$(git config --global --get githooks.installDir)")
 [ -n "$INSTALL_DIR" ] || INSTALL_DIR=~/".githooks"
 SHA_HASH=$(echo "$REPO_LOCATION" | git hash-object --stdin 2>/dev/null)
 NAME=$(echo "$REPO_LOCATION" | tail -c 48 | sed -E "s/[^a-zA-Z0-9]/-/g")

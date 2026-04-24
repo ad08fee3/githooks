@@ -3,6 +3,50 @@
 # Uninstalls the base Git hook templates from https://github.com/rycus86/githooks
 #   See the documentation in the project README for more information.
 
+
+#####################################################
+# Expands user home directory references in a path string.
+#
+# Expands:
+#   - Leading "~" into the user's $HOME directory
+#   - All literal "$HOME" strings into the resolved $HOME
+#
+# Does NOT:
+#   - Resolve "." or ".."
+#   - Resolve symbolic links
+#   - Verify path existence
+#   - Perform any filesystem normalization
+#
+# Invocation example:
+# INSTALL_DIR=$(expand_home_refs "$(git config --global --get githooks.installDir)")
+#
+# Parameters:
+#   $1 - Raw input path string to expand
+#
+# Output:
+#   Prints the expanded path to stdout
+#
+# Returns:
+#   0 always (string transformation only)
+#####################################################
+expand_home_refs() {
+    local p="$1"
+
+    # empty input → return empty
+    [ -z "$p" ] && return 0
+
+    # expand any leading ~
+    case "$p" in
+        "~")   p="$HOME" ;;
+        "~"/*) p="$HOME${p#?}" ;;
+    esac
+
+    # expand literal "$HOME"
+    p=$(printf '%s' "$p" | sed "s|\$HOME|$HOME|g")
+
+    printf '%s\n' "$p"
+}
+
 ############################################################
 # Try to find the directory where the Git
 #   hook templates are currently.
@@ -372,7 +416,7 @@ uninstall_hooks_from_repo() {
 #   0 on true, 1 on false
 ############################################################
 using_hooks_path() {
-    USE_HOOKS_PATH=$(git config --global githooks.useCoreHooksPath)
+    USE_HOOKS_PATH=$(git config --global --get githooks.useCoreHooksPath)
     if [ "$USE_HOOKS_PATH" = "true" ] ||
         [ "$USE_HOOKS_PATH" = "yes" ]; then # Legacy
         return 0
@@ -434,7 +478,7 @@ uninstall_release_repo() {
 #   0 if success, 1 otherwise
 #####################################################
 load_install_dir() {
-    INSTALL_DIR=$(git config --global --get githooks.installDir)
+    INSTALL_DIR=$(expand_home_refs "$(git config --global --get githooks.installDir)")
 
     if [ -z "$INSTALL_DIR" ]; then
         # install dir not defined, use default
@@ -526,8 +570,8 @@ set_main_variables() {
 #####################################################
 remove_core_hooks_path() {
     if using_hooks_path; then
-        GITHOOKS_CORE_HOOKSPATH=$(git config --global githooks.pathForUseCoreHooksPath)
-        GIT_CORE_HOOKSPATH=$(git config --global core.hooksPath)
+        GITHOOKS_CORE_HOOKSPATH=$(git config --global --get githooks.pathForUseCoreHooksPath)
+        GIT_CORE_HOOKSPATH=$(git config --global --get core.hooksPath)
 
         if [ "$GITHOOKS_CORE_HOOKSPATH" = "$GIT_CORE_HOOKSPATH" ]; then
             git config --global --unset core.hooksPath

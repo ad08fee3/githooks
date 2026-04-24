@@ -56,12 +56,55 @@ print_help_header() {
 }
 
 #####################################################
+# Expands user home directory references in a path string.
+#
+# Expands:
+#   - Leading "~" into the user's $HOME directory
+#   - All literal "$HOME" strings into the resolved $HOME
+#
+# Does NOT:
+#   - Resolve "." or ".."
+#   - Resolve symbolic links
+#   - Verify path existence
+#   - Perform any filesystem normalization
+#
+# Invocation example:
+# INSTALL_DIR=$(expand_home_refs "$(git config --global --get githooks.installDir)")
+#
+# Parameters:
+#   $1 - Raw input path string to expand
+#
+# Output:
+#   Prints the expanded path to stdout
+#
+# Returns:
+#   0 always (string transformation only)
+#####################################################
+expand_home_refs() {
+    local p="$1"
+
+    # empty input → return empty
+    [ -z "$p" ] && return 0
+
+    # expand any leading ~
+    case "$p" in
+        "~")   p="$HOME" ;;
+        "~"/*) p="$HOME${p#?}" ;;
+    esac
+
+    # expand literal "$HOME"
+    p=$(printf '%s' "$p" | sed "s|\$HOME|$HOME|g")
+
+    printf '%s\n' "$p"
+}
+
+#####################################################
 # Sets the ${INSTALL_DIR} variable.
 #
 # Returns: None
 #####################################################
 load_install_dir() {
-    INSTALL_DIR=$(git config --global --get githooks.installDir)
+    INSTALL_DIR=$(expand_home_refs "$(git config --global --get githooks.installDir)")
 
     if [ -z "${INSTALL_DIR}" ]; then
         # install dir not defined, use default
@@ -2009,13 +2052,13 @@ is_update_available() {
 #####################################################
 fetch_latest_updates() {
 
-    echo "^ Checking for updates ..."
+    echo "^ Checking for githooks updates ..."
 
     GITHOOKS_CLONE_CREATED="false"
     GITHOOKS_CLONE_UPDATE_AVAILABLE="false"
 
-    GITHOOKS_CLONE_URL=$(git config --global githooks.cloneUrl)
-    GITHOOKS_CLONE_BRANCH=$(git config --global githooks.cloneBranch)
+    GITHOOKS_CLONE_URL=$(git config --global --get githooks.cloneUrl)
+    GITHOOKS_CLONE_BRANCH=$(git config --global --get githooks.cloneBranch)
 
     # We do a fresh clone if there is not a repository
     # or wrong url/branch configured and the user agrees.
@@ -2171,8 +2214,8 @@ assert_release_clone() {
 ############################################################
 clone_release_repository() {
 
-    GITHOOKS_CLONE_URL=$(git config --global githooks.cloneUrl)
-    GITHOOKS_CLONE_BRANCH=$(git config --global githooks.cloneBranch)
+    GITHOOKS_CLONE_URL=$(git config --global --get githooks.cloneUrl)
+    GITHOOKS_CLONE_BRANCH=$(git config --global --get githooks.cloneBranch)
 
     if [ -z "$GITHOOKS_CLONE_URL" ]; then
         GITHOOKS_CLONE_URL="https://github.com/rycus86/githooks.git"
@@ -2219,7 +2262,7 @@ clone_release_repository() {
 #   0 if updates are enabled, 1 otherwise
 #####################################################
 is_autoupdate_enabled() {
-    [ "$(git config --global githooks.autoupdate.enabled)" = "Y" ] || return 1
+    [ "$(git config --global --get githooks.autoupdate.enabled)" = "Y" ] || return 1
 }
 
 #####################################################
@@ -2747,7 +2790,7 @@ config_update_state() {
 #####################################################
 config_update_clone_url() {
     if [ "$1" = "print" ]; then
-        echo "Update clone url set to: $(git config --global githooks.cloneUrl)"
+        echo "Update clone url set to: $(git config --global --get githooks.cloneUrl)"
     elif [ "$1" = "set" ]; then
         if [ -z "$2" ]; then
             echo "! No valid url given" >&2
@@ -2769,7 +2812,7 @@ config_update_clone_url() {
 #####################################################
 config_update_clone_branch() {
     if [ "$1" = "print" ]; then
-        echo "Update clone branch set to: $(git config --global githooks.cloneBranch)"
+        echo "Update clone branch set to: $(git config --global --get githooks.cloneBranch)"
     elif [ "$1" = "set" ]; then
         if [ -z "$2" ]; then
             echo "! No valid branch name given" >&2
@@ -2874,7 +2917,7 @@ config_delete_detected_lfs_hooks() {
         git config --global --unset githooks.deleteDetectedLFSHooks
         config_delete_detected_lfs_hooks "print"
     elif [ "$1" = "print" ]; then
-        VALUE=$(git config --global githooks.deleteDetectedLFSHooks)
+        VALUE=$(git config --global --get githooks.deleteDetectedLFSHooks)
         if [ "$VALUE" = "Y" ]; then
             echo "Detected LFS hooks are by default deleted"
         else

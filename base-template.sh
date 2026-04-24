@@ -7,6 +7,50 @@
 # Legacy version number. Not used anymore, but old installs read it.
 # Version: 9912.310000-000000
 
+
+#####################################################
+# Expands user home directory references in a path string.
+#
+# Expands:
+#   - Leading "~" into the user's $HOME directory
+#   - All literal "$HOME" strings into the resolved $HOME
+#
+# Does NOT:
+#   - Resolve "." or ".."
+#   - Resolve symbolic links
+#   - Verify path existence
+#   - Perform any filesystem normalization
+#
+# Invocation example:
+# INSTALL_DIR=$(expand_home_refs "$(git config --global --get githooks.installDir)")
+#
+# Parameters:
+#   $1 - Raw input path string to expand
+#
+# Output:
+#   Prints the expanded path to stdout
+#
+# Returns:
+#   0 always (string transformation only)
+#####################################################
+expand_home_refs() {
+    local p="$1"
+
+    # empty input → return empty
+    [ -z "$p" ] && return 0
+
+    # expand any leading ~
+    case "$p" in
+        "~")   p="$HOME" ;;
+        "~"/*) p="$HOME${p#?}" ;;
+    esac
+
+    # expand literal "$HOME"
+    p=$(printf '%s' "$p" | sed "s|\$HOME|$HOME|g")
+
+    printf '%s\n' "$p"
+}
+
 #####################################################
 # Execute the current hook,
 #   that in turn executes the hooks in the repo.
@@ -65,7 +109,7 @@ are_githooks_disabled() {
 #####################################################
 load_install_dir() {
 
-    INSTALL_DIR=$(git config --global --get githooks.installDir)
+    INSTALL_DIR=$(expand_home_refs "$(git config --global --get githooks.installDir)")
 
     if [ -z "${INSTALL_DIR}" ]; then
         # install dir not defined, use default
@@ -1085,13 +1129,13 @@ show_prompt() {
 #####################################################
 fetch_latest_updates() {
 
-    echo "^ Checking for updates ..." >&2
+    echo "^ Checking for githooks updates ..." >&2
 
     GITHOOKS_CLONE_CREATED="false"
     GITHOOKS_CLONE_UPDATE_AVAILABLE="false"
 
-    GITHOOKS_CLONE_URL=$(git config --global githooks.cloneUrl)
-    GITHOOKS_CLONE_BRANCH=$(git config --global githooks.cloneBranch)
+    GITHOOKS_CLONE_URL=$(git config --global --get githooks.cloneUrl)
+    GITHOOKS_CLONE_BRANCH=$(git config --global --get githooks.cloneBranch)
 
     # We do a fresh clone if there is not repository
     if is_git_repo "$GITHOOKS_CLONE_DIR"; then
@@ -1160,8 +1204,8 @@ fetch_latest_updates() {
 # Returns: 0 if successful, 1 otherwise
 ############################################################
 clone_release_repository() {
-    GITHOOKS_CLONE_URL=$(git config --global githooks.cloneUrl)
-    GITHOOKS_CLONE_BRANCH=$(git config --global githooks.cloneBranch)
+    GITHOOKS_CLONE_URL=$(git config --global --get githooks.cloneUrl)
+    GITHOOKS_CLONE_BRANCH=$(git config --global --get githooks.cloneBranch)
 
     if [ -z "$GITHOOKS_CLONE_URL" ]; then
         GITHOOKS_CLONE_URL="https://github.com/rycus86/githooks.git"

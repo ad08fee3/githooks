@@ -100,7 +100,7 @@ if echo "$EXTRA_INSTALL_ARGS" | grep -q "use-core-hookspath"; then
         exit 1
     fi
 
-    if [ "$(git config --global githooks.failOnNonExistingSharedHooks)" != "true" ]; then
+    if [ "$(git config --global --get githooks.failOnNonExistingSharedHooks)" != "true" ]; then
         echo "! Expected githooks.failOnNonExistingSharedHooks to be activated to help the user fix the problem"
         exit 1
     fi
