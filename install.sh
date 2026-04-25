@@ -567,8 +567,7 @@ is_local_url() {
 ############################################################
 load_install_dir() {
 
-    # Set to 1 (false) to denote the config value isn't yet verified.
-    local config_value_already_valid=1
+    local config_value_already_valid="false"
 
     # First check if we already have
     # an install directory set (from --prefix)
@@ -586,7 +585,7 @@ load_install_dir() {
             echo "The config value was not a dir"
         else
             # If we pass the above checks we know the value in the config was fine.
-            config_value_already_valid=0
+            config_value_already_valid="true"
             echo "The config value was fine!"
         fi
     fi
@@ -597,7 +596,7 @@ load_install_dir() {
         return 0
     fi
 
-    if ! config_value_already_valid ; then
+    if [ $config_value_already_valid = "false" ]; then
         echo "The config value was not valid"
         if ! git config --global githooks.installDir "$INSTALL_DIR"; then
             echo "! Could not set \`githooks.installDir\`"
