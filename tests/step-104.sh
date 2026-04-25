@@ -77,7 +77,7 @@ if ! git hooks tools unregister dialog; then
     exit 12
 fi
 
-if [ -e ~/".githooks/tools/dialog" ]; then
+if [ -e "~/.githooks/tools/dialog" ]; then
     echo "! Unregister unsuccessful"
     exit 13
 fi

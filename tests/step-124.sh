@@ -59,7 +59,7 @@ mkdir -p /tmp/test117/shared/.githooks/pre-commit &&
 # generate the shared folder name (from the cli.sh)
 REPO_LOCATION="ssh://git@github.com/test/repo1.git"
 INSTALL_DIR=$(expand_home_refs "$(git config --global --get githooks.installDir)")
-[ -n "$INSTALL_DIR" ] || INSTALL_DIR=~/".githooks"
+[ -n "$INSTALL_DIR" ] || INSTALL_DIR="~/.githooks"
 SHA_HASH=$(echo "$REPO_LOCATION" | git hash-object --stdin 2>/dev/null)
 NAME=$(echo "$REPO_LOCATION" | tail -c 48 | sed -E "s/[^a-zA-Z0-9]/-/g")
 SHARED_ROOT="$INSTALL_DIR/shared/$SHA_HASH-$NAME"
