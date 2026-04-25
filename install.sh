@@ -644,15 +644,15 @@ parse_command_line_arguments() {
             : # nothing to do here
         elif [ "$prev_p" = "--prefix" ] && (echo "$p" | grep -qvE '^\-\-.*'); then
             # Allow user to pass preferred install prefix
-            INSTALL_DIR="$p"
+            # INSTALL_DIR="$p"
 
-            # Try to see if the path is given with a tilde
-            TILDE_REPLACED=$(echo "$INSTALL_DIR" | awk 'gsub("~", "'"$HOME"'", $0)')
-            if [ -n "$TILDE_REPLACED" ]; then
-                INSTALL_DIR="$TILDE_REPLACED"
-            fi
+            # # Try to see if the path is given with a tilde
+            # TILDE_REPLACED=$(echo "$INSTALL_DIR" | awk 'gsub("~", "'"$HOME"'", $0)')
+            # if [ -n "$TILDE_REPLACED" ]; then
+            #     INSTALL_DIR="$TILDE_REPLACED"
+            # fi
 
-            INSTALL_DIR="$INSTALL_DIR/.githooks"
+            INSTALL_DIR="$p/.githooks"
 
         elif [ "$p" = "--template-dir" ]; then
             : # nothing to do here
