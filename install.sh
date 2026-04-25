@@ -573,7 +573,7 @@ load_install_dir() {
     # an install directory set (from --prefix)
     if [ -z "$INSTALL_DIR" ]; then
         # load from config
-        INSTALL_DIR=$(expand_home_refs "$(git config --global --get githooks.installDir)")
+        INSTALL_DIR="$(git config --global --get githooks.installDir)"
 
         if [ -z "$INSTALL_DIR" ]; then
             # if still empty, then set to default
