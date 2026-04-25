@@ -579,12 +579,15 @@ load_install_dir() {
         if [ -z "$INSTALL_DIR" ]; then
             # if still empty, then set to default
             INSTALL_DIR="~/.githooks"
+            echo "The config value was empty"
         elif [ ! -d "$INSTALL_DIR" ]; then
             echo "! Configured install directory ${INSTALL_DIR} does not exist" >&2
             INSTALL_DIR="~/.githooks"
+            echo "The config value was not a dir"
         else
             # If we pass the above checks we know the value in the config was fine.
             config_value_already_valid=0
+            echo "The config value was fine!"
         fi
     fi
 
@@ -595,10 +598,12 @@ load_install_dir() {
     fi
 
     if ! config_value_already_valid ; then
+        echo "The config value was not valid"
         if ! git config --global githooks.installDir "$INSTALL_DIR"; then
             echo "! Could not set \`githooks.installDir\`"
             return 1
         fi
+        echo "overwriting..."
     fi
 
     if ! git config --global githooks.runner "$INSTALL_DIR/release/base-template.sh"; then
