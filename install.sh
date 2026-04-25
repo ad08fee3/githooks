@@ -1121,12 +1121,12 @@ setup_new_templates_folder() {
         fi
     fi
 
-    TILDE_REPLACED=$(echo "$USER_TEMPLATES" | awk 'gsub("~", "'"$HOME"'", $0)')
-    if [ -z "$TILDE_REPLACED" ]; then
-        TILDE_REPLACED="$USER_TEMPLATES"
-    fi
+    # TILDE_REPLACED=$(echo "$USER_TEMPLATES" | awk 'gsub("~", "'"$HOME"'", $0)')
+    # if [ -z "$TILDE_REPLACED" ]; then
+    #     TILDE_REPLACED="$USER_TEMPLATES"
+    # fi
 
-    TARGET_TEMPLATE_DIR="${TILDE_REPLACED}/hooks"
+    TARGET_TEMPLATE_DIR="${USER_TEMPLATES}/hooks"
 
     if ! is_dry_run && ! use_core_hookspath; then
         if ! mkdir -p "$TARGET_TEMPLATE_DIR" ||
