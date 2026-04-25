@@ -602,7 +602,9 @@ load_install_dir() {
 
     # Check if the git config contains the correct runner path, if not set it to the new one.
     local current_githooks_runner="$(git config --get githooks.runner)"
+    echo "Current githooks.runner: \`$current_githooks_runner\`"
     local expected_githooks_runner="$INSTALL_DIR/release/base-template.sh"
+    echo "Expected githooks.runner: \`$expected_githooks_runner\`"
     if [ "$current_githooks_runner" != "$expected_githooks_runner" ]; then
         if ! git config --global githooks.runner "$INSTALL_DIR/release/base-template.sh"; then
             echo "! Could not set \`githooks.runner\`"
