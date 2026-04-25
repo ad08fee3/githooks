@@ -1311,7 +1311,7 @@ $EXISTING_REPOSITORY_LIST"
 #   None
 ############################################################
 install_into_existing_repositories() {
-    PRE_START_DIR=$(expand_home_refs "$(git config --global --get githooks.previousSearchDir)")
+    PRE_START_DIR="$(git config --global --get githooks.previousSearchDir)"
     # shellcheck disable=SC2181
     if [ $? -eq 0 ] && [ -n "$PRE_START_DIR" ]; then
         HAS_PRE_START_DIR="true"
