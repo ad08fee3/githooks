@@ -1847,7 +1847,9 @@ set_githooks_directory() {
 # Returns: Error code from `git`
 #####################################################
 execute_git() {
-    REPO="$1"
+    echo "---\r\n---\r\nExecuting git in $1: git $2\r\n---\r\n---"
+    REPO="$(expand_home_refs "$1")"
+    echo "===\r\n===Expanded path: $REPO===\r\n==="
     shift
 
     git -C "$REPO" \
@@ -2041,14 +2043,15 @@ clone_release_repository() {
         GITHOOKS_CLONE_BRANCH="master"
     fi
 
-    if [ -d "$GITHOOKS_CLONE_DIR" ]; then
-        if ! rm -rf "$GITHOOKS_CLONE_DIR" >/dev/null 2>&1; then
+    GITHOOKS_CLONE_DIR_EXPANDED=$(expand_home_refs "$GITHOOKS_CLONE_DIR")
+    if [ -d "$GITHOOKS_CLONE_DIR_EXPANDED" ]; then
+        if ! rm -rf "$GITHOOKS_CLONE_DIR_EXPANDED" >/dev/null 2>&1; then
             echo "! Failed to remove an existing githooks release repository" >&2
             return 1
         fi
     fi
 
-    echo "Cloning \`$GITHOOKS_CLONE_URL\` to \`$GITHOOKS_CLONE_DIR\` ..."
+    echo "Cloning \`$GITHOOKS_CLONE_URL\` to \`$GITHOOKS_CLONE_DIR_EXPANDED\` ..."
 
     CLONE_OUTPUT=$(
         git clone \
@@ -2057,12 +2060,12 @@ clone_release_repository() {
             --depth=1 \
             --single-branch \
             --branch "$GITHOOKS_CLONE_BRANCH" \
-            "$GITHOOKS_CLONE_URL" "$GITHOOKS_CLONE_DIR" 2>&1
+            "$GITHOOKS_CLONE_URL" "$GITHOOKS_CLONE_DIR_EXPANDED" 2>&1
     )
 
     # shellcheck disable=SC2181
     if [ $? -ne 0 ]; then
-        echo "! Cloning \`$GITHOOKS_CLONE_URL\` to \`$GITHOOKS_CLONE_DIR\` failed with output: " >&2
+        echo "! Cloning \`$GITHOOKS_CLONE_URL\` to \`$GITHOOKS_CLONE_DIR_EXPANDED\` failed with output: " >&2
         echo "$CLONE_OUTPUT" >&2
         return 1
     fi
