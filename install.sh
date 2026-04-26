@@ -29,6 +29,7 @@ MANAGED_SERVER_HOOK_NAMES="
 #   0 when successfully finished, 1 if failed
 ############################################################
 execute_installation() {
+    #set -x
     # Global IFS for loops
     IFS_NEWLINE="
 "
@@ -36,7 +37,7 @@ execute_installation() {
 
     load_install_dir || return 1
 
-    echo "At 1"
+    echo "at 1" >&2
     if ! is_postupdate; then
 
         check_deprecation || return 1
@@ -62,19 +63,19 @@ execute_installation() {
     # meaning the `--internal-install` flag is set.
 
 
-    echo "at 2.5"
+    echo "at 2.5" >&2
     if ! is_dry_run; then
         legacy_transform_after_update || return 1
     fi
 
 
-    echo "at 3"
+    echo "at 3" >&2
     if is_non_interactive; then
         disable_tty_input
     fi
 
 
-    echo "at 4"
+    echo "at 4" >&2
     # Find the directory to install to
     if is_single_repo_install; then
         get_cwd_git_dir || return 1
@@ -83,7 +84,7 @@ execute_installation() {
     fi
 
 
-    echo "at 5"
+    echo "at 5" >&2
     # Install the hook templates if needed
     if ! is_single_repo_install; then
         setup_hook_templates || return 1
@@ -2093,13 +2094,15 @@ clone_release_repository() {
 ############################################################
 run_internal_install() {
     INSTALL_SCRIPT="$GITHOOKS_CLONE_DIR/install.sh"
-    if [ ! -f "$INSTALL_SCRIPT" ]; then
+    INSTALL_SCRIPT_EXPANDED=$(expand_home_refs "$INSTALL_SCRIPT")
+
+    if [ ! -f "$INSTALL_SCRIPT_EXPANDED" ]; then
         echo "! No install script in folder \`$GITHOOKS_CLONE_DIR/\`" >&2
         return 1
     fi
 
     # shellcheck disable=SC2086
-    sh "$INSTALL_SCRIPT" $ADD_ARGS \
+    sh "$INSTALL_SCRIPT_EXPANDED" $ADD_ARGS \
         --internal-install \
         --internal-updated-from "$GITHOOKS_CLONE_UPDATED_FROM_COMMIT" \
         "$@" || return 1
