@@ -36,6 +36,7 @@ execute_installation() {
 
     load_install_dir || return 1
 
+    echo "At 1"
     if ! is_postupdate; then
 
         check_deprecation || return 1
@@ -54,19 +55,26 @@ execute_installation() {
         fi
     fi
 
+    echo "at 2"
     # From here starts the post update logic
     # meaning the `--internal-postupdate` flag is set
     # and we are running inside the release clone
     # meaning the `--internal-install` flag is set.
 
+
+    echo "at 2.5"
     if ! is_dry_run; then
         legacy_transform_after_update || return 1
     fi
 
+
+    echo "at 3"
     if is_non_interactive; then
         disable_tty_input
     fi
 
+
+    echo "at 4"
     # Find the directory to install to
     if is_single_repo_install; then
         get_cwd_git_dir || return 1
@@ -74,6 +82,8 @@ execute_installation() {
         prepare_target_template_directory || return 1
     fi
 
+
+    echo "at 5"
     # Install the hook templates if needed
     if ! is_single_repo_install; then
         setup_hook_templates || return 1
