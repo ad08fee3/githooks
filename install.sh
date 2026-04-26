@@ -1857,9 +1857,9 @@ set_githooks_directory() {
 # Returns: Error code from `git`
 #####################################################
 execute_git() {
-    echo "---\r\n---\r\nExecuting git in $1: git $2\r\n---\r\n---"
+    # echo "---\r\n---\r\nExecuting git in $1: git $2\r\n---\r\n---"
     REPO="$(expand_home_refs "$1")"
-    echo "===\r\n===Expanded path: $REPO===\r\n==="
+    # echo "===\r\n===Expanded path: $REPO===\r\n==="
     shift
 
     git -C "$REPO" \
