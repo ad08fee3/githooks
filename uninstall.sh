@@ -635,9 +635,6 @@ uninstall() {
     # Uninstall all cli
     uninstall_cli
 
-    # uninstall release repo
-    uninstall_release_repo
-
     # remove core hooks path if we are using it
     remove_core_hooks_path
 
@@ -665,6 +662,9 @@ uninstall() {
     git config --global --unset githooks.autoupdate.updateCloneUrl
     git config --global --unset githooks.autoupdate.updateCloneBranch
     git config --global --unset githooks.previous.searchdir
+
+    # uninstall release repo
+    uninstall_release_repo
 
     # Finished
     echo "All done!"
