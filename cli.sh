@@ -2289,7 +2289,7 @@ execute_install_script() {
     fi
 
     sh -s -- "$@" <"$INSTALL_SCRIPT" || return 1
-    return 0
+    exit 0
 }
 
 #####################################################
