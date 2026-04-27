@@ -599,7 +599,7 @@ load_install_dir() {
         fi
     fi
 
-    GITHOOKS_CLONE_DIR="$INSTALL_DIR_RAW/release"
+    GITHOOKS_CLONE_DIR="$INSTALL_DIR/release"
 
     if is_dry_run; then
         return 0
@@ -2056,15 +2056,14 @@ clone_release_repository() {
         GITHOOKS_CLONE_BRANCH="master"
     fi
 
-    GITHOOKS_CLONE_DIR_EXPANDED=$(expand_home_refs "$GITHOOKS_CLONE_DIR")
-    if [ -d "$GITHOOKS_CLONE_DIR_EXPANDED" ]; then
-        if ! rm -rf "$GITHOOKS_CLONE_DIR_EXPANDED" >/dev/null 2>&1; then
+    if [ -d "$GITHOOKS_CLONE_DIR" ]; then
+        if ! rm -rf "$GITHOOKS_CLONE_DIR" >/dev/null 2>&1; then
             echo "! Failed to remove an existing githooks release repository" >&2
             return 1
         fi
     fi
 
-    echo "Cloning \`$GITHOOKS_CLONE_URL\` to \`$GITHOOKS_CLONE_DIR_EXPANDED\` ..."
+    echo "Cloning \`$GITHOOKS_CLONE_URL\` to \`$GITHOOKS_CLONE_DIR\` ..."
 
     CLONE_OUTPUT=$(
         git clone \
@@ -2073,12 +2072,12 @@ clone_release_repository() {
             --depth=1 \
             --single-branch \
             --branch "$GITHOOKS_CLONE_BRANCH" \
-            "$GITHOOKS_CLONE_URL" "$GITHOOKS_CLONE_DIR_EXPANDED" 2>&1
+            "$GITHOOKS_CLONE_URL" "$GITHOOKS_CLONE_DIR" 2>&1
     )
 
     # shellcheck disable=SC2181
     if [ $? -ne 0 ]; then
-        echo "! Cloning \`$GITHOOKS_CLONE_URL\` to \`$GITHOOKS_CLONE_DIR_EXPANDED\` failed with output: " >&2
+        echo "! Cloning \`$GITHOOKS_CLONE_URL\` to \`$GITHOOKS_CLONE_DIR\` failed with output: " >&2
         echo "$CLONE_OUTPUT" >&2
         return 1
     fi
@@ -2096,15 +2095,14 @@ clone_release_repository() {
 ############################################################
 run_internal_install() {
     INSTALL_SCRIPT="$GITHOOKS_CLONE_DIR/install.sh"
-    INSTALL_SCRIPT_EXPANDED=$(expand_home_refs "$INSTALL_SCRIPT")
 
-    if [ ! -f "$INSTALL_SCRIPT_EXPANDED" ]; then
+    if [ ! -f "$INSTALL_SCRIPT" ]; then
         echo "! No install script in folder \`$GITHOOKS_CLONE_DIR/\`" >&2
         return 1
     fi
 
     # shellcheck disable=SC2086
-    sh "$INSTALL_SCRIPT_EXPANDED" $ADD_ARGS \
+    sh "$INSTALL_SCRIPT" $ADD_ARGS \
         --internal-install \
         --internal-updated-from "$GITHOOKS_CLONE_UPDATED_FROM_COMMIT" \
         "$@" || return 1
