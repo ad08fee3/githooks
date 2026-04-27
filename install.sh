@@ -585,12 +585,13 @@ load_install_dir() {
     if [ -z "$INSTALL_DIR" ]; then
         # load from config
         INSTALL_DIR="$(git config --global --get githooks.installDir)"
+        INSTALL_DIR_EXPANDED="$(expand_home_refs "$INSTALL_DIR")"
 
-        if [ -z "$INSTALL_DIR" ]; then
+        if [ -z "$INSTALL_DIR_EXPANDED" ]; then
             # if still empty, then set to default
             INSTALL_DIR="~/.githooks"
-        elif [ ! -d "$INSTALL_DIR" ]; then
-            echo "! Configured install directory ${INSTALL_DIR} does not exist" >&2
+        elif [ ! -d "$INSTALL_DIR_EXPANDED" ]; then
+            echo "! Configured install directory ${INSTALL_DIR_EXPANDED} does not exist" >&2
             INSTALL_DIR="~/.githooks"
         else
             # If we pass the above checks we know the value in the config was fine.
@@ -598,7 +599,7 @@ load_install_dir() {
         fi
     fi
 
-    GITHOOKS_CLONE_DIR="$INSTALL_DIR/release"
+    GITHOOKS_CLONE_DIR="$INSTALL_DIR_EXPANDED/release"
 
     if is_dry_run; then
         return 0
@@ -612,9 +613,9 @@ load_install_dir() {
     fi
 
     # Check if the git config contains the correct runner path, if not set it to the new one.
-    local current_githooks_runner="$(git config --get githooks.runner)"
+    local current_githooks_runner="$(expand_home_refs "$(git config --get githooks.runner)")"
     echo "Current githooks.runner: \`$current_githooks_runner\`"
-    local expected_githooks_runner="$INSTALL_DIR/release/base-template.sh"
+    local expected_githooks_runner="$INSTALL_DIR_EXPANDED/release/base-template.sh"
     echo "Expected githooks.runner: \`$expected_githooks_runner\`"
     if [ "$current_githooks_runner" != "$expected_githooks_runner" ]; then
         if ! git config --global githooks.runner "$INSTALL_DIR/release/base-template.sh"; then
