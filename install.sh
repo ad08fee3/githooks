@@ -1220,7 +1220,7 @@ install_command_line_tool() {
     mkdir -p "$INSTALL_DIR/bin" &&
         cp "$INSTALL_DIR/release/cli.sh" "$INSTALL_DIR/bin/githooks" &&
         chmod +x "$INSTALL_DIR/bin/githooks" &&
-        git config --global alias.hooks "!\"$INSTALL_DIR_RAW/bin/githooks\"" &&
+        git config --global alias.hooks '!'$INSTALL_DIR_RAW'/bin/githooks' &&
         echo "The command line helper is now available as 'git hooks <cmd>'" &&
         return
 
