@@ -584,29 +584,29 @@ load_install_dir() {
     # an install directory set (from --prefix)
     if [ -z "$INSTALL_DIR" ]; then
         # load from config
-        INSTALL_DIR="$(git config --global --get githooks.installDir)"
-        INSTALL_DIR_EXPANDED="$(expand_home_refs "$INSTALL_DIR")"
+        INSTALL_DIR_RAW="$(git config --global --get githooks.installDir)"
+        INSTALL_DIR="$(expand_home_refs "$INSTALL_DIR")"
 
-        if [ -z "$INSTALL_DIR_EXPANDED" ]; then
+        if [ -z "$INSTALL_DIR" ]; then
             # if still empty, then set to default
-            INSTALL_DIR="~/.githooks"
-        elif [ ! -d "$INSTALL_DIR_EXPANDED" ]; then
-            echo "! Configured install directory ${INSTALL_DIR_EXPANDED} does not exist" >&2
-            INSTALL_DIR="~/.githooks"
+            INSTALL_DIR_RAW="~/.githooks"
+        elif [ ! -d "$INSTALL_DIR" ]; then
+            echo "! Configured install directory ${INSTALL_DIR} does not exist" >&2
+            INSTALL_DIR_RAW="~/.githooks"
         else
             # If we pass the above checks we know the value in the config was fine.
             config_value_valid="true"
         fi
     fi
 
-    GITHOOKS_CLONE_DIR="$INSTALL_DIR_EXPANDED/release"
+    GITHOOKS_CLONE_DIR="$INSTALL_DIR_RAW/release"
 
     if is_dry_run; then
         return 0
     fi
 
     if [ "$config_value_valid" = "false" ]; then
-        if ! git config --global githooks.installDir "$INSTALL_DIR"; then
+        if ! git config --global githooks.installDir "$INSTALL_DIR_RAW"; then
             echo "! Could not set \`githooks.installDir\`"
             return 1
         fi
@@ -615,10 +615,10 @@ load_install_dir() {
     # Check if the git config contains the correct runner path, if not set it to the new one.
     local current_githooks_runner="$(expand_home_refs "$(git config --get githooks.runner)")"
     echo "Current githooks.runner: \`$current_githooks_runner\`"
-    local expected_githooks_runner="$INSTALL_DIR_EXPANDED/release/base-template.sh"
+    local expected_githooks_runner="$INSTALL_DIR/release/base-template.sh"
     echo "Expected githooks.runner: \`$expected_githooks_runner\`"
     if [ "$current_githooks_runner" != "$expected_githooks_runner" ]; then
-        if ! git config --global githooks.runner "$INSTALL_DIR/release/base-template.sh"; then
+        if ! git config --global githooks.runner "$INSTALL_DIR_RAW/release/base-template.sh"; then
             echo "! Could not set \`githooks.runner\`"
             return 1
         fi
@@ -1129,29 +1129,30 @@ search_pre_commit_sample_file() {
 # Returns: 0 if the $TARGET_TEMPLATE_DIR is set, 1 otherwise
 ############################################################
 setup_new_templates_folder() {
-    DEFAULT_TARGET="$INSTALL_DIR/templates"
+    DEFAULT_TARGET_RAW="$INSTALL_DIR_RAW/templates"
 
     if is_non_interactive; then
-        USER_TEMPLATES="$DEFAULT_TARGET"
+        USER_TEMPLATES_RAW="$DEFAULT_TARGET_RAW"
     else
-        unset USER_TEMPLATES
-        printf "Enter the target folder: [%s] " "$DEFAULT_TARGET"
-        read -r USER_TEMPLATES </dev/tty
-        if [ -z "$USER_TEMPLATES" ]; then
-            USER_TEMPLATES="$DEFAULT_TARGET"
+        unset USER_TEMPLATES_RAW
+        printf "Enter the target folder: [%s] " "$DEFAULT_TARGET_RAW"
+        read -r USER_TEMPLATES_RAW </dev/tty
+        if [ -z "$USER_TEMPLATES_RAW" ]; then
+            USER_TEMPLATES_RAW="$DEFAULT_TARGET_RAW"
         fi
     fi
 
-    # TILDE_REPLACED=$(echo "$USER_TEMPLATES" | awk 'gsub("~", "'"$HOME"'", $0)')
-    # if [ -z "$TILDE_REPLACED" ]; then
-    #     TILDE_REPLACED="$USER_TEMPLATES"
-    # fi
+    TILDE_REPLACED=$(echo "$USER_TEMPLATES_RAW" | awk 'gsub("~", "'"$HOME"'", $0)')
+    if [ -z "$TILDE_REPLACED" ]; then
+        TILDE_REPLACED="$USER_TEMPLATES_RAW"
+    fi
 
-    TARGET_TEMPLATE_DIR="${USER_TEMPLATES}/hooks"
+    TARGET_TEMPLATE_DIR="${TILDE_REPLACED}/hooks"
+    TARGET_TEMPLATE_DIR_RAW="${USER_TEMPLATES_RAW}/hooks"
 
     if ! is_dry_run && ! use_core_hookspath; then
         if ! mkdir -p "$TARGET_TEMPLATE_DIR" ||
-            ! set_githooks_directory --template-dir "$USER_TEMPLATES"; then # Let this one go with or without a tilde
+            ! set_githooks_directory --template-dir "$TARGET_TEMPLATE_DIR_RAW"; then # Let this one go with or without a tilde
             echo "! Failed to set up the new Git templates folder" >&2
             return 1
         fi
@@ -1219,7 +1220,7 @@ install_command_line_tool() {
     mkdir -p "$INSTALL_DIR/bin" &&
         cp "$INSTALL_DIR/release/cli.sh" "$INSTALL_DIR/bin/githooks" &&
         chmod +x "$INSTALL_DIR/bin/githooks" &&
-        git config --global alias.hooks "!\"$INSTALL_DIR/bin/githooks\"" &&
+        git config --global alias.hooks "!\"$INSTALL_DIR_RAW/bin/githooks\"" &&
         echo "The command line helper is now available as 'git hooks <cmd>'" &&
         return
 
@@ -1372,7 +1373,7 @@ install_into_existing_repositories() {
         START_DIR="$PRE_START_DIR"
     fi
 
-    RAW_START_DIR="$START_DIR"
+    START_DIR_RAW="$START_DIR"
     TILDE_REPLACED=$(echo "$START_DIR" | awk 'gsub("~", "'"$HOME"'", $0)')
     if [ -n "$TILDE_REPLACED" ]; then
         START_DIR="$TILDE_REPLACED"
@@ -1384,7 +1385,7 @@ install_into_existing_repositories() {
         return
     fi
 
-    git config --global githooks.previousSearchDir "$RAW_START_DIR"
+    git config --global githooks.previousSearchDir "$START_DIR_RAW"
 
     find_existing_git_dirs "$START_DIR"
 
