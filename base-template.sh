@@ -559,7 +559,7 @@ should_output_skipping_disabled_hook() {
         return 0 # we have not printed the message yet
     fi
 
-    LAST_UPDATE=$(grep "$HOOK_PATH" "$CURRENT_GIT_DIR/.githooks.skip.output.dates" | sed -E "s/([^ ]+) .*/\1/")
+    LAST_UPDATE=$(grep -E " $HOOK_PATH$" "$CURRENT_GIT_DIR/.githooks.skip.output.dates" | sed -E "s/([^ ]+) .*/\1/")
     CURRENT_TIME=$(date +%s)
     ELAPSED_TIME=$((CURRENT_TIME - LAST_UPDATE))
     ONE_DAY=86400
