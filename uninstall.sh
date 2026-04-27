@@ -482,11 +482,11 @@ load_install_dir() {
 
     if [ -z "$INSTALL_DIR" ]; then
         # install dir not defined, use default
-        INSTALL_DIR="~/.githooks"
+        INSTALL_DIR=~/".githooks"
     elif [ ! -d "$INSTALL_DIR" ]; then
         echo "! Githooks installation is corrupt! " >&2
         echo "  Install directory at ${INSTALL_DIR} is missing." >&2
-        INSTALL_DIR="~/.githooks"
+        INSTALL_DIR=~/".githooks"
         echo "  Using default install directory at $INSTALL_DIR" >&2
     fi
 

@@ -577,9 +577,7 @@ is_local_url() {
 #   0 otherwise
 ############################################################
 load_install_dir() {
-
     local config_value_valid="false"
-
     # First check if we already have
     # an install directory set (from --prefix)
     if [ -z "$INSTALL_DIR" ]; then
@@ -671,15 +669,12 @@ parse_command_line_arguments() {
             : # nothing to do here
         elif [ "$prev_p" = "--prefix" ] && (echo "$p" | grep -qvE '^\-\-.*'); then
             # Allow user to pass preferred install prefix
-            # INSTALL_DIR="$p"
+            INSTALL_DIR_RAW="$p"
+            # Filter out any possible tilde
+            INSTALL_DIR=$(expand_home_refs "$INSTALL_DIR_RAW")
 
-            # # Try to see if the path is given with a tilde
-            # TILDE_REPLACED=$(echo "$INSTALL_DIR" | awk 'gsub("~", "'"$HOME"'", $0)')
-            # if [ -n "$TILDE_REPLACED" ]; then
-            #     INSTALL_DIR="$TILDE_REPLACED"
-            # fi
-
-            INSTALL_DIR="$p/.githooks"
+            INSTALL_DIR="$INSTALL_DIR/.githooks"
+            INSTALL_DIR_RAW="$INSTALL_DIR_RAW/.githooks"
 
         elif [ "$p" = "--template-dir" ]; then
             : # nothing to do here
@@ -1142,13 +1137,8 @@ setup_new_templates_folder() {
         fi
     fi
 
-    TILDE_REPLACED=$(echo "$USER_TEMPLATES_RAW" | awk 'gsub("~", "'"$HOME"'", $0)')
-    if [ -z "$TILDE_REPLACED" ]; then
-        TILDE_REPLACED="$USER_TEMPLATES_RAW"
-    fi
-
-    TARGET_TEMPLATE_DIR="${TILDE_REPLACED}/hooks"
     TARGET_TEMPLATE_DIR_RAW="${USER_TEMPLATES_RAW}/hooks"
+    TARGET_TEMPLATE_DIR=expand_home_refs "$TARGET_TEMPLATE_DIR_RAW"
 
     if ! is_dry_run && ! use_core_hookspath; then
         if ! mkdir -p "$TARGET_TEMPLATE_DIR" ||
@@ -1350,7 +1340,7 @@ install_into_existing_repositories() {
     if is_non_interactive; then
         if [ "$HAS_PRE_START_DIR" = "true" ]; then
             echo "Installing the hooks into existing repositories under $PRE_START_DIR"
-            START_DIR="$PRE_START_DIR"
+            START_DIR_RAW="$PRE_START_DIR"
         else
             # non-interactive set and no pre start dir set -> abort
             return
@@ -1366,18 +1356,14 @@ install_into_existing_repositories() {
         fi
 
         printf 'Where do you want to start the search? [%s] ' "$PRE_START_DIR"
-        read -r START_DIR </dev/tty
+        read -r START_DIR_RAW </dev/tty
     fi
 
-    if [ "$START_DIR" = "" ]; then
-        START_DIR="$PRE_START_DIR"
+    if [ "$START_DIR_RAW" = "" ]; then
+        START_DIR_RAW="$PRE_START_DIR"
     fi
 
-    START_DIR_RAW="$START_DIR"
-    TILDE_REPLACED=$(echo "$START_DIR" | awk 'gsub("~", "'"$HOME"'", $0)')
-    if [ -n "$TILDE_REPLACED" ]; then
-        START_DIR="$TILDE_REPLACED"
-    fi
+    START_DIR=$(expand_home_refs "$START_DIR_RAW")
 
     if [ ! -d "$START_DIR" ]; then
         echo "! '$START_DIR' is not a directory" >&2
@@ -2095,7 +2081,6 @@ clone_release_repository() {
 ############################################################
 run_internal_install() {
     INSTALL_SCRIPT="$GITHOOKS_CLONE_DIR/install.sh"
-
     if [ ! -f "$INSTALL_SCRIPT" ]; then
         echo "! No install script in folder \`$GITHOOKS_CLONE_DIR/\`" >&2
         return 1
