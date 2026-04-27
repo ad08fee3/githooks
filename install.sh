@@ -585,7 +585,7 @@ load_install_dir() {
     if [ -z "$INSTALL_DIR" ]; then
         # load from config
         INSTALL_DIR_RAW="$(git config --global --get githooks.installDir)"
-        INSTALL_DIR="$(expand_home_refs "$INSTALL_DIR")"
+        INSTALL_DIR="$(expand_home_refs "$INSTALL_DIR_RAW")"
 
         if [ -z "$INSTALL_DIR" ]; then
             # if still empty, then set to default
